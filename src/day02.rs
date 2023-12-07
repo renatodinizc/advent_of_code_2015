@@ -44,7 +44,7 @@ fn calculate_wrapping_paper(length: &u32, width: &u32, height: &u32) -> u32 {
 
 fn calculate_ribbon(length: &u32, width: &u32, height: &u32) -> u32 {
     let bow = length * width * height;
-    let mut sizes = vec![length, width, height];
+    let mut sizes = [length, width, height];
 
     sizes.sort();
     let smallest_perimeter = 2 * sizes[0] + 2 * sizes[1];
