@@ -1,5 +1,5 @@
-mod day02;
+mod day03;
 
 fn main() {
-    let _ = day02::resolve();
+    day03::resolve();
 }

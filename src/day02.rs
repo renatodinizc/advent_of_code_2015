@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::{BufRead, BufReader};
 use std::error::Error;
 
-
 pub fn resolve() -> Result<(), Box<dyn Error>> {
     let file = match File::open("inputs/day02.txt") {
         Ok(file) => file,
