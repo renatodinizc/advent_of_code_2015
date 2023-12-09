@@ -14,64 +14,39 @@ pub fn resolve() {
   let mut counter = 0;
 
   for line in entry.lines() {
-    let entry = line.unwrap();
-    let entry_v: Vec<&str> = entry.split(' ').collect();
+    let temp = line.unwrap();
+    let entry: Vec<&str> = temp.split_whitespace().collect();
 
-    let is_toggle = entry_v.first().unwrap() == &"toggle";
+    let operation: Operation = match entry.get(1) {
+      Some(&"on") => Operation::TurnOn,
+      Some(&"off") => Operation::TurnOff,
+      _ => Operation::Toggle,
+    };
 
-    let operation: Operation = if is_toggle {
-      Operation::Toggle
-    } else {
-      match *entry_v.get(1).unwrap() {
-        "on" => Operation::TurnOn,
-        "off" => Operation::TurnOff,
-        _ => panic!("problem while reading file"),
+    let start = operation.get_coords(&entry, Coords::Start);
+    let end = operation.get_coords(&entry, Coords::End);
+
+    for x in start.0..=end.0 {
+      for y in start.1..=end.1 {
+        match &operation {
+          Operation::TurnOn => {
+            let brightness = lamps.entry((x, y)).or_insert(0);
+            *brightness += 1;
+          },
+          Operation::TurnOff => {
+            let brightness = lamps.entry((x, y)).or_insert(1);
+            if *brightness > 0 { *brightness -= 1 };
+          },
+          Operation::Toggle => {
+            let brightness = lamps.entry((x, y)).or_insert(0);
+            *brightness += 2;
+          },
+        };
       }
-    };
-
-    let start: Option<(u32, u32)> = if is_toggle {
-      entry_v.get(1).unwrap().split_once(',').map(|(x,y)| (x.parse().unwrap(), y.parse().unwrap()))
-    } else {
-        entry_v.get(2).unwrap().split_once(',').map(|(x,y)| (x.parse().unwrap(), y.parse().unwrap()))
-    };
-
-    let end: Option<(u32, u32)> = if is_toggle {
-      entry_v.get(3).unwrap().split_once(',').map(|(x,y)| (x.parse().unwrap(), y.parse().unwrap()))
-    } else {
-      entry_v.get(4).unwrap().split_once(',').map(|(x,y)| (x.parse().unwrap(), y.parse().unwrap()))
-    };
-
-    match (start, end) {
-      (Some(start), Some(end)) => {
-
-        for x in start.0..=end.0 {
-          for y in start.1..=end.1 {
-            match &operation {
-              Operation::TurnOn => {
-                let brightness = lamps.entry((x, y)).or_insert(0);
-                *brightness += 1;
-              },
-              Operation::TurnOff => {
-                let brightness = lamps.entry((x, y)).or_insert(1);
-                if *brightness > 0 { *brightness -= 1 };
-              },
-              Operation::Toggle => {
-                let brightness = lamps.entry((x, y)).or_insert(0);
-                *brightness += 2;
-              },
-            };
-          }
-        }
-      },
-      _ => panic!("Problem here"),
-    };
+    }
   }
 
-
-
-  for (_key, brightness) in lamps {
-    counter += brightness;
-  };
+  for (_key, brightness) in lamps { counter += brightness };
   println!("The total brightness of all lights combined is {counter}.");
 }
 
@@ -79,5 +54,32 @@ enum Operation {
   Toggle,
   TurnOn,
   TurnOff
+}
+
+enum Coords {
+  Start,
+  End,
+}
+
+impl Operation {
+  fn get_coords(&self, entry: &[&str], location: Coords) -> (u32, u32) {
+    let index = match (location, &self) {
+      (Coords::Start, Operation::Toggle) => 1,
+      (Coords::Start, _) => 2,
+      (Coords::End, Operation::Toggle) => 3,
+      (Coords::End, _) => 4,
+    };
+
+    match entry.get(index) {
+      Some(coords) => match coords.split_once(',').map(|(x,y)| (x.parse(), y.parse())) {
+        Some(value) => match value {
+          (Ok(value1), Ok(value2)) => (value1, value2),
+          _ => panic!("my error 2"),
+        },
+        None => panic!("my error"),
+      },
+      None => panic!("Problem while parsing."),
+    }
+  }
 }
 
